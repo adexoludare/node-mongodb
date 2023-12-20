@@ -29,28 +29,13 @@ function insertRecord(req, res) {
             .catch(err => {
                 console.log("Error during insert ".concat(err));
                 res.status(500).send("Error during insert");
-            })
-    // (
-    //     (err, doc) => {
-    //     if (!err) {
-    //         res.redirect("student/list")
-    //     }
-    //     console.log("Error during insert ".concat(err));
-    // })
+            })   
 }
 
-// function updateRecord(req, res) {
-//     Student.findOneAndUpdate({_id: req.body.id}, req.body, {new: true}, (err, doc) => {
-//         if (!err) {
-//             res.redirect("student/list");
-//         }
-//         console.log("Error during update ".concat(err));
-//     })
-// }
-
 function updateRecord(req, res) {
-    Student.findOneAndUpdate({_id: req.body.id}, req.body, {new: true})
+    Student.findOneAndUpdate({_id: req.body._id}, req.body, {new: true})
             .then(doc => {
+                console.log(req.body.id)
                 if (doc) {
                     res.redirect("student/list");
                 } else {
@@ -61,20 +46,7 @@ function updateRecord(req, res) {
             .catch(err => {
                 console.log("Error during update: ", err);
                 res.status(500).send("Error during update");
-            })
-    //     (err, doc) => {
-    //     if (doc) {
-    //         res.redirect("student/list");
-    //     } else {
-    //         console.log("Record not found for update");
-    //         res.status(404).send("Record not found for update");
-    //     }
-    //     if (err) {
-    //         console.log("Error during update: ", err);
-    //         res.status(500).send("Error during update");
-    //     }
-    // }
-}
+            })};
 
 
 router.get('/list', (req, res) => {
@@ -92,15 +64,6 @@ router.get('/list', (req, res) => {
 
 
 router.get('/:id', (req, res) => {
-    // Student.findById(req.params.id, (err, doc) => {
-    //     if (!err) {
-    //         res.render("student/addOrEdit", {
-    //             viewTitle: "Update Student",
-    //             student: doc,
-    //         })
-    //         console.log(doc);
-    //     }
-    // })
     Student.findById(req.params.id)
         .then(doc => {
             res.render("student/addOrEdit", {
@@ -114,41 +77,31 @@ router.get('/:id', (req, res) => {
         })
 })
 
-// router.get('/delete/:id', (req, res) => {
-//     Student.findByIdAndRemove(req.params.id, (err, doc) => {
-//         if (!err) {
-//             res.redirect("student/list")
-//         }
-//         console.log('Error in deletion '.concat(err));
-//     })
-// })
+router.get('/delete/:id', async (req, res) => {
+    try {
+        // Find and delete the specified record
+        const deletedStudent = await Student.findByIdAndDelete(req.params.id);
 
-router.get('/delete/:id', (req, res) => {
-    Student.findByIdAndDelete(req.params.id)
-            .then(doc => {
-                if (doc) {
-                    res.redirect("./student/list");
-                } else {
-                    console.log("Record not found for deletion");
-                    res.status(404).send("Record not found for deletion");
-                }
-            })
-            .catch(err => {
-                console.log("Error in deletion: ", err);
-                res.status(500).send("Error in deletion");
-            })
-    //     (err, doc) => {
-    //     if (doc) {
-    //         res.redirect("student/list");
-    //     } else {
-    //         console.log("Record not found for deletion");
-    //         res.status(404).send("Record not found for deletion");
-    //     }
-    //     if (err) {
-    //         console.log('Error in deletion: ', err);
-    //         res.status(500).send("Error in deletion");
-    //     }
-    // }
-})
+        if (deletedStudent) {
+            // Find the latest record after deletion
+            const latestStudent = await Student.findOne().sort({ _id: -1 });
+
+            // Redirect to the latest student list record
+            if (latestStudent) {
+                //res.redirect(`/student/${latestStudent._id}`);
+                res.redirect("/student/list");
+            } else {
+                console.log("No records found after deletion");
+                res.status(404).send("No records found after deletion");
+            }
+        } else {
+            console.log("Record not found for deletion");
+            res.status(404).send("Record not found for deletion");
+        }
+    } catch (err) {
+        console.log("Error in deletion: ", err);
+        res.status(500).send("Error in deletion");
+    }
+});
 
 module.exports = router
